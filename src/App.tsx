@@ -3,7 +3,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Shield, User, FileText, AlertTriangle, Scale, Settings, CheckCircle2, XCircle, ChevronRight, Smartphone, Lock, Eye, EyeOff, Zap, MessageCircle, Send, X, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let ai: GoogleGenAI | null = null;
+if (process.env.GEMINI_API_KEY) {
+  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+}
 
 const sections = [
   { id: 'intro', title: 'Welcome to TikTok', icon: FileText },
@@ -559,6 +562,12 @@ function Chatbot() {
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsLoading(true);
+
+    if (!ai) {
+      setMessages(prev => [...prev, { role: 'model', text: "I'm currently unavailable because the GEMINI_API_KEY environment variable is missing on this server." }]);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await ai.models.generateContent({
